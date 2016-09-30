@@ -8,18 +8,18 @@ from time import sleep
 env = gym.make('CartPole-v0')
 
 # Defining the environment related constants
-NUM_STATE = 15
+NUM_STATE = 10
 NUM_ACTION = env.action_space.n
 ANGLE_STATE_INDEX = 2
-ANGLE_BOUND = (-env.theta_threshold_radians*2, env.theta_threshold_radians*2)
-MIN_EXPLORE_RATE = 0.01
+ANGLE_BOUND = (-env.theta_threshold_radians*1.2, env.theta_threshold_radians*1.2)
+MIN_EXPLORE_RATE = 0.1
 MIN_LEARNING_RATE = 0.1
 
 # Defining the simulation related constants
-NUM_EPISODES = 5000
+NUM_EPISODES = 400
 MAX_T = 500
 DEBUG_MODE = True
-ENABLE_UPLOAD = True
+ENABLE_UPLOAD = False
 
 # Creating a Q-Table for each action and state pair
 q_table = np.zeros((NUM_STATE, NUM_ACTION))
@@ -58,7 +58,7 @@ def simulate():
 
             # Update the Q based on the result
             best_q = np.amax(q_table[state,:])
-            q_table[state_0, action] += learning_rate*(reward + discount_factor*(best_q) - q_table[state_0, action])
+            #q_table[state_0, action] += learning_rate*(reward + discount_factor*(best_q) - q_table[state_0, action])
 
             # Setting up for the next iteration
             state_0 = state
@@ -67,7 +67,7 @@ def simulate():
 
             # Print data
             if (DEBUG_MODE):
-                print("\nepisode = %d" % episode)
+                print("\nEpisode = %d" % episode)
                 print("t = %d" % t)
                 print("Action: %d" % action)
                 print("Angle: %f" % angle)
@@ -83,11 +83,11 @@ def simulate():
                         print("%.2f" % q, end="  ")
                     print("")
 
-            if done or angle < -env.theta_threshold_radians*2 or angle > env.theta_threshold_radians*2 :
+            if angle < -env.theta_threshold_radians*2 or angle > env.theta_threshold_radians*2 :
                print("Episode %d finished after %f time steps" % (episode, t_done))
                break
 
-            #sleep(0.5)
+            #sleep(0.25)
 
         # Update parameters
         explore_rate = get_explore_rate(episode)
