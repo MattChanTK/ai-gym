@@ -4,7 +4,7 @@ import random
 import math
 from time import sleep
 
-## Result: https://gym.openai.com/evaluations/eval_AaMQ0FykTlWzsDg9yGQ6FA
+## Result: https://gym.openai.com/evaluations/eval_QykiR71DR0mpXEXslkpDLQ
 
 ## Initialize the "Cart-Pole" environment
 env = gym.make('CartPole-v0')
@@ -37,7 +37,7 @@ NUM_EPISODES = 1000
 MAX_T = 250
 STREAK_TO_END = 120
 SOLVED_T = 199
-DEBUG_MODE = True
+DEBUG_MODE = False
 ENABLE_UPLOAD = True
 
 
@@ -63,7 +63,7 @@ def simulate():
         state_0 = state_to_bucket(obv)
 
         for t in range(MAX_T):
-            env.render()
+           # env.render()
 
             # Select an action
             action = select_action(state_0, explore_rate)
@@ -130,10 +130,10 @@ def select_action(state, explore_rate):
 
 
 def get_explore_rate(t):
-    return max(MIN_EXPLORE_RATE, min(1, 1.0 - math.log10((t+1)/50)))
+    return max(MIN_EXPLORE_RATE, min(1, 1.0 - math.log10((t+1)/25)))
 
 def get_learning_rate(t):
-    return max(MIN_LEARNING_RATE, min(0.5, 1.0 - math.log10((t+1)/50)))
+    return max(MIN_LEARNING_RATE, min(0.5, 1.0 - math.log10((t+1)/25)))
 
 def state_to_bucket(state):
     bucket_indice = []
