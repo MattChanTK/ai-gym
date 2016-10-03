@@ -4,7 +4,10 @@ from gym.utils import seeding
 import numpy as np
 
 class MazeEnv(gym.Env):
-    metadata = {'render.modes': ['human']}
+    metadata = {
+        'render.modes': ['human'],
+        'video.frames_per_second': 60
+    }
 
     ACTION = {
         "UP":       0,
