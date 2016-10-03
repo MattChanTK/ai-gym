@@ -1,5 +1,3 @@
-import random
-import numpy as np
 import os
 from gym_maze.envs.maze_view_2d import Maze
 
@@ -11,7 +9,7 @@ if __name__ == "__main__":
         # create it if it doesn't
         os.mkdir(dir_name)
 
-    # increment number until it finds a name that's being used already (max maze_999)
+    # increment number until it finds a name that is not being used already (max maze_999)
     maze_path = None
     for i in range(1, 1000):
         maze_name = "maze2d_%03d.npy" % i

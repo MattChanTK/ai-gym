@@ -2,36 +2,38 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
+import os
+from gym_maze.envs.maze_view_2d import MazeView2D
+
 
 class MazeEnv(gym.Env):
     metadata = {
-        'render.modes': ['human'],
-        'video.frames_per_second': 60
+        "render.modes": ["human"],
+        "video.frames_per_second": 60
     }
 
-    ACTION = {
-        "UP":       0,
-        "DOWN":     1,
-        "LEFT":     2,
-        "RIGHT":    3,
-    }
+    ACTION = ["N", "S", "E", "W"]
 
-    def __init__(self, maze_size=(10,10)):
+    def __init__(self):
 
-        # specifying the size of the maze
-        assert(isinstance(maze_size, (tuple, list)))
-        assert(len(maze_size) == 2) # only support 2D maze right now
-        self.maze_size = np.array(maze_size)
+        self.maze_view = MazeView2D("maze2d.npy")
+        self.maze_size = self.maze_view.maze_size
 
         # forward or backward in each dimension
-        self.action_space = spaces.Discrete(2*len(self.maze_size)) # 2D: (up, down, left, right)
-        self.observation_space = spaces.Box(np.zeros(len(self.maze_size)), self.maze_size)
+        self.action_space = spaces.Discrete(2*len(self.maze_size))
 
+        # observation is the x, y coordinate of the grid
+        low = np.zeros(len(self.maze_size))
+        high =  np.array(self.maze_size) - np.ones(len(self.maze_size))
+        self.observation_space = spaces.Box(low, high)
+
+        # initial condition
+        self.state = None
+        self.steps_beyond_done = None
+
+        # Simulation related variables.
         self._seed()
         self.reset()
-        self.viewer = None
-
-        self.steps_beyond_done = None
 
         # Just need to initialize the relevant attributes
         self._configure()
@@ -44,20 +46,31 @@ class MazeEnv(gym.Env):
         return [seed]
 
     def _step(self, action):
-        pass
+        if isinstance(action, int):
+            self.maze_view.move_robot(self.ACTION[action])
+        else:
+            self.maze_view.move_robot(action)
+
+        if np.array_equal(self.maze_view.robot, self.maze_view.goal):
+            reward = 1
+            done = True
+        else:
+            reward = 0
+            done = False
+
+        self.state = self.maze_view.move_robot
+
+        info = {}
+
+        return self.state, reward, done, info
+
     def _reset(self):
-        pass
+        self.state = np.zeros(2)
+        self.steps_beyond_done = None
+        return self.state
+
     def _render(self, mode='human', close=False):
-        """ Viewer only supports human mode currently. """
         if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
+            self.maze_view.quit_game()
 
-        screen_width = 600
-        screen_height = 400
-
-        if self.viewer is None:
-            pass
-
+        return self.maze_view.update()
