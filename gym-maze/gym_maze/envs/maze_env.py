@@ -15,7 +15,9 @@ class MazeEnv(gym.Env):
 
     def __init__(self):
 
-        self.maze_view = MazeView2D(maze_file_path="maze2d_002.npy")
+        self.maze_view = MazeView2D(maze_name="OpenAI Gym - Maze",
+                                    maze_file_path="maze2d_002.npy",
+                                    screen_size=(640, 640))
         self.maze_size = self.maze_view.maze_size
 
         # forward or backward in each dimension

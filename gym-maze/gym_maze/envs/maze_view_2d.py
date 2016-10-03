@@ -6,7 +6,7 @@ import os
 
 class MazeView2D:
 
-    def __init__(self, maze_name="Maze2D", maze_file_path=None):
+    def __init__(self, maze_name="Maze2D", maze_file_path=None, screen_size=(640, 640)):
 
         # PyGame configurations
         pygame.init()
@@ -27,9 +27,9 @@ class MazeView2D:
                 else:
                     raise FileExistsError("Cannot find %s." % maze_file_path)
 
-        self.maze = Maze(Maze.load_maze(maze_file_path))
+        self.maze = Maze(maze_cells=Maze.load_maze(maze_file_path))
         self.maze_size = self.maze.maze_size
-        self.screen = pygame.display.set_mode(self.maze.screen_size)
+        self.screen = pygame.display.set_mode(screen_size)
 
         # Create the Robot
         self.robot = np.zeros(2, dtype=int)
@@ -102,12 +102,12 @@ class MazeView2D:
 
         # drawing the horizontal lines
         for y in range(self.maze.MAZE_H):
-            pygame.draw.line(self.maze_layer, (0, 0, 0, 255), (0, y * self.maze.CELL_H),
-                             (self.maze.SCREEN_W, y * self.maze.CELL_H))
+            pygame.draw.line(self.maze_layer, (0, 0, 0, 255), (0, y * self.CELL_H),
+                             (self.SCREEN_W, y * self.CELL_H))
         # drawing the vertical lines
         for x in range(self.maze.MAZE_W):
-            pygame.draw.line(self.maze_layer, (0, 0, 0, 255), (x * self.maze.CELL_W, 0),
-                             (x * self.maze.CELL_W, self.maze.SCREEN_H))
+            pygame.draw.line(self.maze_layer, (0, 0, 0, 255), (x * self.CELL_W, 0),
+                             (x * self.CELL_W, self.SCREEN_H))
 
         # breaking the walls
         for x in range(len(self.maze.maze_cells)):
@@ -122,25 +122,25 @@ class MazeView2D:
 
     def __cover_walls(self, x, y, dirs, colour=(0, 0, 255, 15)):
 
-        dx = x * self.maze.CELL_W
-        dy = y * self.maze.CELL_H
+        dx = x * self.CELL_W
+        dy = y * self.CELL_H
 
         if not isinstance(dirs, str):
             raise TypeError("dirs must be a str.")
 
         for dir in dirs:
             if dir == "S":
-                line_head = (dx + 1, dy + self.maze.CELL_H)
-                line_tail = (dx + self.maze.CELL_W - 1, dy + self.maze.CELL_H)
+                line_head = (dx + 1, dy + self.CELL_H)
+                line_tail = (dx + self.CELL_W - 1, dy + self.CELL_H)
             elif dir == "N":
                 line_head = (dx + 1, dy)
-                line_tail = (dx + self.maze.CELL_W - 1, dy)
+                line_tail = (dx + self.CELL_W - 1, dy)
             elif dir == "W":
                 line_head = (dx, dy + 1)
-                line_tail = (dx, dy + self.maze.CELL_H - 1)
+                line_tail = (dx, dy + self.CELL_H - 1)
             elif dir == "E":
-                line_head = (dx + self.maze.CELL_W, dy + 1)
-                line_tail = (dx + self.maze.CELL_W, dy + self.maze.CELL_H - 1)
+                line_head = (dx + self.CELL_W, dy + 1)
+                line_tail = (dx + self.CELL_W, dy + self.CELL_H - 1)
             else:
                 raise ValueError("The only valid directions are (N, S, E, W).")
 
@@ -148,19 +148,40 @@ class MazeView2D:
 
     def __draw_robot(self, colour=(0, 0, 150), transparency=255):
 
-        x = int(self.robot[0]*self.maze.CELL_W + self.maze.CELL_W*0.5 + 0.5)
-        y = int(self.robot[1]*self.maze.CELL_H + self.maze.CELL_H*0.5 + 0.5)
-        r = int(self.maze.CELL_W/5 + 0.5)
+        x = int(self.robot[0]*self.CELL_W + self.CELL_W*0.5 + 0.5)
+        y = int(self.robot[1]*self.CELL_H + self.CELL_H*0.5 + 0.5)
+        r = int(min(self.CELL_W, self.CELL_H)/5 + 0.5)
 
         pygame.draw.circle(self.maze_layer, colour + (transparency,), (x, y), r)
 
     def __draw_goal(self, colour=(150, 0, 0), transparency=155):
 
-        x = int(self.goal[0]*self.maze.CELL_W + 0.5)
-        y = int(self.goal[1]*self.maze.CELL_H + 0.5)
-        w = int(self.maze.CELL_W + 0.5)
-        h = int(self.maze.CELL_H + 0.5)
+        x = int(self.goal[0]*self.CELL_W + 0.5)
+        y = int(self.goal[1]*self.CELL_H + 0.5)
+        w = int(self.CELL_W + 0.5)
+        h = int(self.CELL_H + 0.5)
         pygame.draw.rect(self.maze_layer, colour + (transparency,), (x, y, w, h))
+
+    @property
+    def SCREEN_SIZE(self):
+        return tuple(self.screen.get_size())
+
+    @property
+    def SCREEN_W(self):
+        return int(self.SCREEN_SIZE[0])
+
+    @property
+    def SCREEN_H(self):
+        return int(self.SCREEN_SIZE[1])
+
+    @property
+    def CELL_W(self):
+        return self.SCREEN_W / self.maze.MAZE_W
+
+    @property
+    def CELL_H(self):
+        return self.SCREEN_H / self.maze.MAZE_H
+
 
 class Maze:
 
@@ -171,15 +192,10 @@ class Maze:
         "W": (-1, 0)
     }
 
-    def __init__(self, maze_cells=None, screen_size=(640,640), maze_size=(10,10)):
+    def __init__(self, maze_cells=None, maze_size=(10,10)):
 
         # maze member variables
         self.maze_cells = maze_cells
-
-        # Setting the screen size
-        if not (isinstance(screen_size, (list, tuple)) and len(screen_size) == 2):
-            raise ValueError("screen_size must be a tuple: (width, height).")
-        self.screen_size = screen_size
 
         # Use existing one if exists
         if self.maze_cells is not None:
@@ -272,9 +288,10 @@ class Maze:
 
         # if cell is still within bounds after the move
         if 0 <= x1 < self.MAZE_W and 0 <= y1 < self.MAZE_H:
-           this_wall = bool(self.get_walls_status(self.maze_cells[cell[0], cell[1]])[dir])
-           other_wall = bool(self.get_walls_status(self.maze_cells[x1, y1])[self.__get_opposite_wall(dir)])
-           return this_wall or other_wall
+            # check if the wall is opened
+            this_wall = bool(self.get_walls_status(self.maze_cells[cell[0], cell[1]])[dir])
+            other_wall = bool(self.get_walls_status(self.maze_cells[x1, y1])[self.__get_opposite_wall(dir)])
+            return this_wall or other_wall
         return False
 
     @property
@@ -284,22 +301,6 @@ class Maze:
     @property
     def MAZE_H(self):
         return int(self.maze_size[1])
-
-    @property
-    def SCREEN_W(self):
-        return int(self.screen_size[0])
-
-    @property
-    def SCREEN_H(self):
-        return int(self.screen_size[1])
-
-    @property
-    def CELL_W(self):
-        return self.SCREEN_W / self.MAZE_W
-
-    @property
-    def CELL_H(self):
-        return self.SCREEN_H / self.MAZE_H
 
     @classmethod
     def get_walls_status(cls, cell):
@@ -350,15 +351,3 @@ class Maze:
             opposite_dirs += opposite_dir
 
         return opposite_dirs
-
-
-if __name__ == "__main__":
-
-    maze_view = MazeView2D()
-
-    while not maze_view.game_over:
-        maze_view.view_update()
-        maze_view.controller_update()
-
-
-
