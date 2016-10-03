@@ -9,14 +9,13 @@ from gym_maze.envs.maze_view_2d import MazeView2D
 class MazeEnv(gym.Env):
     metadata = {
         "render.modes": ["human"],
-        "video.frames_per_second": 60
     }
 
     ACTION = ["N", "S", "E", "W"]
 
     def __init__(self):
 
-        self.maze_view = MazeView2D("maze2d.npy")
+        self.maze_view = MazeView2D(maze_file_path="maze2d_002.npy")
         self.maze_size = self.maze_view.maze_size
 
         # forward or backward in each dimension
