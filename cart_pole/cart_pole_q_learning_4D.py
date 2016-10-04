@@ -22,23 +22,21 @@ STATE_BOUNDS = list(zip(env.observation_space.low, env.observation_space.high))
 STATE_BOUNDS[1] = [-0.5, 0.5]
 #STATE_BOUNDS[2] = [STATE_BOUNDS[2][0]/2, STATE_BOUNDS[2][0]/2]
 STATE_BOUNDS[3] = [-math.radians(50), math.radians(50)]
-# Index of the action
-ACTION_INDEX = len(NUM_BUCKETS)
 
 ## Creating a Q-Table for each state-action pair
 q_table = np.zeros(NUM_BUCKETS + (NUM_ACTIONS,))
 
 ## Learning related constants
 MIN_EXPLORE_RATE = 0.01
-MIN_LEARNING_RATE = 0.1
+MIN_LEARNING_RATE = 0.2
 
-## Defining the simulation related constants
+# Defining the simulation related constants
 NUM_EPISODES = 1000
 MAX_T = 250
 STREAK_TO_END = 120
 SOLVED_T = 199
 DEBUG_MODE = False
-ENABLE_UPLOAD = True
+ENABLE_UPLOAD = False
 
 
 if ENABLE_UPLOAD:
@@ -50,7 +48,7 @@ def simulate():
     ## Instantiating the learning related parameters
     learning_rate = get_learning_rate(0)
     explore_rate = get_explore_rate(0)
-    discount_factor = 0.99  # since the world is unchanging
+    discount_factor = 0.999  # since the world is unchanging
 
     num_streaks = 0
 
@@ -63,7 +61,7 @@ def simulate():
         state_0 = state_to_bucket(obv)
 
         for t in range(MAX_T):
-           # env.render()
+            # env.render()
 
             # Select an action
             action = select_action(state_0, explore_rate)
@@ -96,14 +94,15 @@ def simulate():
                 print("")
 
             if done:
-               print("Episode %d finished after %f time steps" % (episode, t))
-               if (t >= SOLVED_T):
-                   num_streaks += 1
-               else:
-                   num_streaks = 0
-               break
+                print("Episode %d finished after %f time steps" % (episode, t))
 
-            #sleep(0.25)
+                if t >= SOLVED_T:
+                    num_streaks += 1
+                else:
+                    num_streaks = 0
+                break
+
+        #sleep(0.25)
 
         # It's considered done when it's solved over 120 times consecutively
         if num_streaks > STREAK_TO_END:

@@ -12,7 +12,7 @@ class MazeView2D:
         pygame.init()
         pygame.display.set_caption(maze_name)
         self.clock = pygame.time.Clock()
-        self.game_over = False
+        self.__game_over = False
 
         # Load a maze
         if maze_file_path is None:
@@ -27,15 +27,15 @@ class MazeView2D:
                 else:
                     raise FileExistsError("Cannot find %s." % maze_file_path)
 
-        self.maze = Maze(maze_cells=Maze.load_maze(maze_file_path))
-        self.maze_size = self.maze.maze_size
+        self.__maze = Maze(maze_cells=Maze.load_maze(maze_file_path))
+        self.maze_size = self.__maze.maze_size
         self.screen = pygame.display.set_mode(screen_size)
 
         # Create the Robot
-        self.robot = np.zeros(2, dtype=int)
+        self.__robot = np.zeros(2, dtype=int)
 
         # Set the Goal
-        self.goal = np.array(self.maze_size) - np.array((1, 1))
+        self.__goal = np.array(self.maze_size) - np.array((1, 1))
 
         # Create a background
         self.background = pygame.Surface(self.screen.get_size()).convert()
@@ -59,36 +59,46 @@ class MazeView2D:
             self.__view_update()
             self.__controller_update()
         except Exception as e:
-            self.game_over = True
+            self.__game_over = True
             self.quit_game()
             raise e
         finally:
-            return self.game_over
+            return self.__game_over
 
     def quit_game(self):
-        if self.game_over:
-            self.game_over = True
-        pygame.display.quit()
-        pygame.quit()
+
+        try:
+            if self.game_over:
+                self.game_over = True
+            pygame.display.quit()
+            pygame.quit()
+        except Exception:
+            pass
 
     def move_robot(self, dir):
-        if dir not in self.maze.COMPASS.keys():
-            raise ValueError("The only valid dirs are %s." % str(self.maze.COMPASS.keys()))
-        if self.maze.is_open(self.robot, dir):
+        if dir not in self.__maze.COMPASS.keys():
+            raise ValueError("dir cannot be %s. The only valid dirs are %s." % (str(dir), str(self.__maze.COMPASS.keys())))
+        if self.__maze.is_open(self.__robot, dir):
             # update the drawing
             self.__draw_robot(transparency=0)
-            self.robot += np.array(self.maze.COMPASS[dir])
+            self.__robot += np.array(self.__maze.COMPASS[dir])
             self.__draw_robot(transparency=255)
 
+    def reset_robot(self):
+
+        self.__draw_robot(transparency=0)
+        self.__robot = np.zeros(2, dtype=int)
+        self.__draw_robot(transparency=255)
+
     def __controller_update(self):
-        if not self.game_over:
+        if not self.__game_over:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = True
+                    self.__game_over = True
                     self.quit_game()
 
     def __view_update(self):
-        if not self.game_over:
+        if not self.__game_over:
             self.clock.tick(60)
             # update the robot's position
             self.__draw_robot()
@@ -148,19 +158,35 @@ class MazeView2D:
 
     def __draw_robot(self, colour=(0, 0, 150), transparency=255):
 
-        x = int(self.robot[0]*self.CELL_W + self.CELL_W*0.5 + 0.5)
-        y = int(self.robot[1]*self.CELL_H + self.CELL_H*0.5 + 0.5)
+        x = int(self.__robot[0] * self.CELL_W + self.CELL_W * 0.5 + 0.5)
+        y = int(self.__robot[1] * self.CELL_H + self.CELL_H * 0.5 + 0.5)
         r = int(min(self.CELL_W, self.CELL_H)/5 + 0.5)
 
         pygame.draw.circle(self.maze_layer, colour + (transparency,), (x, y), r)
 
     def __draw_goal(self, colour=(150, 0, 0), transparency=155):
 
-        x = int(self.goal[0]*self.CELL_W + 0.5)
-        y = int(self.goal[1]*self.CELL_H + 0.5)
+        x = int(self.__goal[0] * self.CELL_W + 0.5)
+        y = int(self.__goal[1] * self.CELL_H + 0.5)
         w = int(self.CELL_W + 0.5)
         h = int(self.CELL_H + 0.5)
         pygame.draw.rect(self.maze_layer, colour + (transparency,), (x, y, w, h))
+
+    @property
+    def maze(self):
+        return self.__maze
+
+    @property
+    def robot(self):
+        return self.__robot
+
+    @property
+    def goal(self):
+        return self.__goal
+
+    @property
+    def game_over(self):
+        return self.__game_over
 
     @property
     def SCREEN_SIZE(self):
