@@ -17,7 +17,7 @@ class MazeView2D:
         # Load a maze
         if maze_file_path is None:
             dir_path = os.path.dirname(os.path.abspath(__file__))
-            maze_file_path = os.path.join(dir_path, "maze_samples", "maze2d_001.npy")
+            maze_file_path = os.path.join(dir_path, "maze_samples", "maze2d_10x10.npy")
         else:
             if not os.path.exists(maze_file_path):
                 dir_path = os.path.dirname(os.path.abspath(__file__))
