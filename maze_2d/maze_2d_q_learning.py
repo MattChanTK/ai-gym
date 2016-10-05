@@ -1,47 +1,11 @@
 import sys
-from gym_maze.envs.maze_env import MazeEnv
 import numpy as np
 import math
 import random
 from time import sleep
 
-
-# Initialize the "maze" environment
-env = MazeEnv()
-
-'''
-Defining the environment related constants
-'''
-# Number of discrete states (bucket) per state dimension
-MAZE_SIZE = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
-NUM_BUCKETS =  MAZE_SIZE # one bucket per grid
-
-# Number of discrete actions
-NUM_ACTIONS = env.action_space.n  # ["N", "S", "E", "W"]
-# Bounds for each discrete state
-STATE_BOUNDS = list(zip(env.observation_space.low, env.observation_space.high))
-
-'''
-Learning related constants
-'''
-MIN_EXPLORE_RATE = 0.001
-MIN_LEARNING_RATE = 0.2
-DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=int)/10
-
-'''
-Defining the simulation related constants
-'''
-NUM_EPISODES = 10000
-MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100
-STREAK_TO_END = 30
-SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
-DEBUG_MODE =  1
-RENDER_MAZE = True
-
-'''
-Creating a Q-Table for each state-action pair
-'''
-q_table = np.zeros(NUM_BUCKETS + (NUM_ACTIONS,), dtype=float)
+import gym
+# from gym_maze.envs.maze_env import MazeEnv
 
 
 def simulate():
@@ -175,7 +139,45 @@ def state_to_bucket(state):
 
 
 if __name__ == "__main__":
-    input("Enter any key to start...")
-    simulate()
-    input("Enter any key to quit")
+    # Initialize the "maze" environment
+    env = gym.make("maze-v0")
+    # env = MazeEnv()
 
+    '''
+    Defining the environment related constants
+    '''
+    # Number of discrete states (bucket) per state dimension
+    MAZE_SIZE = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
+    NUM_BUCKETS = MAZE_SIZE  # one bucket per grid
+
+    # Number of discrete actions
+    NUM_ACTIONS = env.action_space.n  # ["N", "S", "E", "W"]
+    # Bounds for each discrete state
+    STATE_BOUNDS = list(zip(env.observation_space.low, env.observation_space.high))
+
+    '''
+    Learning related constants
+    '''
+    MIN_EXPLORE_RATE = 0.001
+    MIN_LEARNING_RATE = 0.2
+    DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=int) / 10
+
+    '''
+    Defining the simulation related constants
+    '''
+    NUM_EPISODES = 10000
+    MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100
+    STREAK_TO_END = 30
+    SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
+    DEBUG_MODE = 1
+    RENDER_MAZE = True
+
+    '''
+    Creating a Q-Table for each state-action pair
+    '''
+    q_table = np.zeros(NUM_BUCKETS + (NUM_ACTIONS,), dtype=float)
+
+    '''
+    Begin simulation
+    '''
+    simulate()
