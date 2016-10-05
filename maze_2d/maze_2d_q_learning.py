@@ -3,6 +3,7 @@ from gym_maze.envs.maze_env import MazeEnv
 import numpy as np
 import math
 import random
+from time import sleep
 
 
 # Initialize the "maze" environment
@@ -23,17 +24,17 @@ STATE_BOUNDS = list(zip(env.observation_space.low, env.observation_space.high))
 '''
 Learning related constants
 '''
-MIN_EXPLORE_RATE = 0.05
+MIN_EXPLORE_RATE = 0.001
 MIN_LEARNING_RATE = 0.2
-DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=int)/4
+DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=int)/10
 
 '''
 Defining the simulation related constants
 '''
-NUM_EPISODES = 5000
-MAX_T = 10000
-STREAK_TO_END = 120
-SOLVED_T =  np.prod(MAZE_SIZE, dtype=int)
+NUM_EPISODES = 10000
+MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100
+STREAK_TO_END = 30
+SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
 DEBUG_MODE =  1
 RENDER_MAZE = True
 
@@ -113,6 +114,7 @@ def simulate():
                 simulation_stopped = env.render()
                 if simulation_stopped:
                     sys.exit()
+                #sleep(0.01)
 
             if done:
                 print("Episode %d finished after %f time steps with total reward = %f (streak %d)."
@@ -173,4 +175,7 @@ def state_to_bucket(state):
 
 
 if __name__ == "__main__":
+    input("Enter any key to start...")
     simulate()
+    input("Enter any key to quit")
+

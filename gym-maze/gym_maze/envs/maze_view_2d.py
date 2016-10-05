@@ -166,10 +166,10 @@ class MazeView2D:
 
     def __draw_goal(self, colour=(150, 0, 0), transparency=155):
 
-        x = int(self.__goal[0] * self.CELL_W + 0.5)
-        y = int(self.__goal[1] * self.CELL_H + 0.5)
-        w = int(self.CELL_W + 0.5)
-        h = int(self.CELL_H + 0.5)
+        x = int(self.__goal[0] * self.CELL_W + 0.5 + 1)
+        y = int(self.__goal[1] * self.CELL_H + 0.5 + 1)
+        w = int(self.CELL_W + 0.5 - 1)
+        h = int(self.CELL_H + 0.5 - 1)
         pygame.draw.rect(self.maze_layer, colour + (transparency,), (x, y, w, h))
 
     @property
