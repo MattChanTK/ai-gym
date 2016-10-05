@@ -2,10 +2,10 @@ import sys
 import numpy as np
 import math
 import random
-from time import sleep
 
 import gym
-# from gym_maze.envs.maze_env import MazeEnv
+import gym_maze
+#from gym_maze.envs.maze_env import MazeEnv
 
 
 def simulate():
@@ -17,15 +17,14 @@ def simulate():
 
     num_streaks = 0
 
+    # Render tha maze
+    env.render()
+
     for episode in range(NUM_EPISODES):
 
         # Reset the environment
         obv = env.reset()
 
-        # Render tha maze
-        simulation_stopped = env.render()
-        if simulation_stopped:
-            sys.exit()
 
         # the initial state
         state_0 = state_to_bucket(obv)
@@ -75,10 +74,10 @@ def simulate():
 
             # Render tha maze
             if RENDER_MAZE:
-                simulation_stopped = env.render()
-                if simulation_stopped:
-                    sys.exit()
-                #sleep(0.01)
+                env.render()
+
+            if env.is_game_over():
+                sys.exit()
 
             if done:
                 print("Episode %d finished after %f time steps with total reward = %f (streak %d)."
@@ -139,9 +138,9 @@ def state_to_bucket(state):
 
 
 if __name__ == "__main__":
+
     # Initialize the "maze" environment
     env = gym.make("maze-v0")
-    # env = MazeEnv()
 
     '''
     Defining the environment related constants
@@ -171,6 +170,7 @@ if __name__ == "__main__":
     SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
     DEBUG_MODE = 1
     RENDER_MAZE = True
+    ENABLE_RECORDING = True
 
     '''
     Creating a Q-Table for each state-action pair
@@ -180,4 +180,13 @@ if __name__ == "__main__":
     '''
     Begin simulation
     '''
+
+    recording_folder = "/tmp/maze_q_learning"
+
+    if ENABLE_RECORDING:
+        env.monitor.start(recording_folder, force=True)
+
     simulate()
+
+    if ENABLE_RECORDING:
+        env.monitor.close()
