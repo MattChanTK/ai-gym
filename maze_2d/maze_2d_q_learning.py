@@ -5,7 +5,6 @@ import random
 
 import gym
 import gym_maze
-#from gym_maze.envs.maze_env import MazeEnv
 
 
 def simulate():
@@ -13,7 +12,7 @@ def simulate():
     # Instantiating the learning related parameters
     learning_rate = get_learning_rate(0)
     explore_rate = get_explore_rate(0)
-    discount_factor = 0.99  # since the world is unchanging
+    discount_factor = 0.99
 
     num_streaks = 0
 
@@ -24,7 +23,6 @@ def simulate():
 
         # Reset the environment
         obv = env.reset()
-
 
         # the initial state
         state_0 = state_to_bucket(obv)
@@ -140,7 +138,7 @@ def state_to_bucket(state):
 if __name__ == "__main__":
 
     # Initialize the "maze" environment
-    env = gym.make("maze-v0")
+    env = gym.make("maze-sample-10x10-v0")
 
     '''
     Defining the environment related constants
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     '''
     MIN_EXPLORE_RATE = 0.001
     MIN_LEARNING_RATE = 0.2
-    DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=int) / 10
+    DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=float) / 10.0
 
     '''
     Defining the simulation related constants
@@ -180,7 +178,6 @@ if __name__ == "__main__":
     '''
     Begin simulation
     '''
-
     recording_folder = "/tmp/maze_q_learning"
 
     if ENABLE_RECORDING:
