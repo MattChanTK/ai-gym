@@ -138,7 +138,7 @@ def state_to_bucket(state):
 if __name__ == "__main__":
 
     # Initialize the "maze" environment
-    env = gym.make("maze-random-10x10-v0")
+    env = gym.make("maze-random-10x10-plus-v0")
 
     '''
     Defining the environment related constants
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     '''
     NUM_EPISODES = 50000
     MAX_T = np.prod(MAZE_SIZE, dtype=int) * 100
-    STREAK_TO_END = 30
+    STREAK_TO_END = 100
     SOLVED_T = np.prod(MAZE_SIZE, dtype=int)
     DEBUG_MODE = 0
     RENDER_MAZE = True
