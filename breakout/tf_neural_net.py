@@ -22,7 +22,6 @@ class PixelsCNN(object):
             raise TypeError("num_samples must be an integer.")
         self.__num_samples = num_samples
 
-        self.create_network()
 
     def create_network(self):
 
