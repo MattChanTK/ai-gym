@@ -1,12 +1,7 @@
 # Import the relevant components
 import gzip
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import shutil
 import struct
-import sys
 import cntk
 from cntk.ops import *
 
