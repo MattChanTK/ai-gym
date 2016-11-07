@@ -229,29 +229,32 @@ trainer = cntk.Trainer(output, loss, label_error, [learner])
 Training the Convolutional Neural Network
 -----------------------------------------
 '''
+num_training_epoch = 5
 training_progress_output_freq = 10
 
-sample_count = 0
-num_minibatch = 0
+for epoch in range(num_training_epoch):
 
-# loop over minibatches in the epoch
-while sample_count < num_train_samples:
+    sample_count = 0
+    num_minibatch = 0
 
-    minibatch = train_minibatch_source.next_minibatch(min(train_minibatch_size, num_train_samples - sample_count))
+    # loop over minibatches in the epoch
+    while sample_count < num_train_samples:
 
-    # Specify the mapping of input variables in the model to actual minibatch data to be trained with
-    data = {input_vars: minibatch[training_features],
-            labels: minibatch[training_labels]}
-    trainer.train_minibatch(data)
+        minibatch = train_minibatch_source.next_minibatch(min(train_minibatch_size, num_train_samples - sample_count))
 
-    sample_count += data[labels].num_samples
-    num_minibatch += 1
+        # Specify the mapping of input variables in the model to actual minibatch data to be trained with
+        data = {input_vars: minibatch[training_features],
+                labels: minibatch[training_labels]}
+        trainer.train_minibatch(data)
 
-    # Print the training progress data
-    if num_minibatch % training_progress_output_freq == 0:
-        training_loss = cntk.get_train_loss(trainer)
-        eval_error = cntk.get_train_eval_criterion(trainer)
-        print("# of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (sample_count, training_loss, eval_error))
+        sample_count += data[labels].num_samples
+        num_minibatch += 1
+
+        # Print the training progress data
+        if num_minibatch % training_progress_output_freq == 0:
+            training_loss = cntk.get_train_loss(trainer)
+            eval_error = cntk.get_train_eval_criterion(trainer)
+            print("Epoch %d  |  # of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (epoch, sample_count, training_loss, eval_error))
 
 print("Training Completed.", end="\n\n")
 
@@ -279,4 +282,4 @@ while sample_count < num_test_samples:
     sample_count += data[labels].num_samples
 
 # Printing the average of evaluation errors of all test minibatches
-print("Average errors of all test minibatches: %.6f%%" % np.mean(test_results*100, axis=0, dtype=float))
+print("Average errors of all test minibatches: %.3f%%" % (float(np.mean(test_results, dtype=float))*100))
