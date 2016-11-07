@@ -115,13 +115,14 @@ Retrieve and process the training and testing data
 np.random.seed(0)
 
 # Define the data dimensions
-input_dim = 28*28
+image_shape = (1, 28, 28)
+input_dim = int(np.prod(image_shape, dtype=int))
 output_dim = 10
 
 num_train_samples = 60000
 num_test_samples = 10000
 
-# Loading the MNIST training and testing data
+# The local path where the training and test data might be found or will be downloaded to.
 training_data_path = os.path.join(os.getcwd(), "MNIST_data", "Train-28x28_cntk_text.txt")
 testing_data_path = os.path.join(os.getcwd(), "MNIST_data", "Test-28x28_cntk_text.txt")
 
@@ -156,21 +157,21 @@ feature_stream_name = 'features'
 labels_stream_name = 'labels'
 
 # Convert to CNTK MinibatchSource
-train_mb_source = cntk.text_format_minibatch_source(training_data_path, [
+train_minibatch_source = cntk.text_format_minibatch_source(training_data_path, [
     cntk.StreamConfiguration(feature_stream_name, input_dim),
     cntk.StreamConfiguration(labels_stream_name, output_dim)])
-features_train = train_mb_source[feature_stream_name]
-labels_train = train_mb_source[labels_stream_name]
+training_features = train_minibatch_source[feature_stream_name]
+training_labels = train_minibatch_source[labels_stream_name]
 
-print("Training data from file {0} successfully read.".format(training_data_path))
+print("Training data from file %s successfully read." % training_data_path)
 
-test_mb_source = cntk.text_format_minibatch_source(testing_data_path, [
+test_minibatch_source = cntk.text_format_minibatch_source(testing_data_path, [
     cntk.StreamConfiguration(feature_stream_name, input_dim),
     cntk.StreamConfiguration(labels_stream_name, output_dim)])
-features_test = test_mb_source[feature_stream_name]
-labels_test = test_mb_source[labels_stream_name]
+test_features = test_minibatch_source[feature_stream_name]
+test_labels = test_minibatch_source[labels_stream_name]
 
-print("Test data from file {0} successfully read".format(testing_data_path))
+print("Test data from file %s successfully read." % testing_data_path)
 
 
 '''
@@ -178,16 +179,12 @@ print("Test data from file {0} successfully read".format(testing_data_path))
 Constructing the Convolutional Neural Network
 ---------------------------------------------
 '''
-image_shape = (1, 28, 28)
-input = cntk.ops.input_variable(image_shape, np.float32)
-label = cntk.ops.input_variable(output_dim, np.float32)
+def create_convolutional_neural_network(input_vars, out_dims, dropout_prob=0.0):
 
-def create_convolutional_neural_network(input, out_dims, dropout_prob=0.0):
-
-    convolutional_layer_1 = Convolution((5, 5), 32, activation=cntk.ops.relu, pad=True)(input)
+    convolutional_layer_1 = Convolution((5, 5), 32, strides=1, activation=cntk.ops.relu, pad=True)(input_vars)
     pooling_layer_1 = MaxPooling((2, 2), strides=(2, 2))(convolutional_layer_1)
 
-    convolutional_layer_2 = Convolution((5, 5), 64, activation=cntk.ops.relu, pad=True)(pooling_layer_1)
+    convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True)(pooling_layer_1)
     pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2))(convolutional_layer_2)
 
     fully_connected_layer = Dense(1024)(pooling_layer_2)
@@ -196,11 +193,11 @@ def create_convolutional_neural_network(input, out_dims, dropout_prob=0.0):
 
     return output_layer
 
-# Scale the input to 0-1 range by dividing each pixel by 256
-scaled_input = cntk.ops.element_times(cntk.ops.constant(float(1/256)), input)
+# Define the input to the neural network
+input_vars = cntk.ops.input_variable(image_shape, np.float32)
 
 # Create the convolutional neural network
-output = create_convolutional_neural_network(scaled_input, output_dim, dropout_prob=0.5)
+output = create_convolutional_neural_network(input_vars, output_dim, dropout_prob=0.5)
 
 
 '''
@@ -208,16 +205,19 @@ output = create_convolutional_neural_network(scaled_input, output_dim, dropout_p
 Setting up the trainer
 ----------------------
 '''
+# Define the label as the other input parameter of the trainer
+labels = cntk.ops.input_variable(output_dim, np.float32)
+
 #Initialize the parameters for the trainer
-train_minibatch_size = 64
+train_minibatch_size = 100
 learning_rate = 1e-4
 momentum = 0.9 ** (1.0 / train_minibatch_size)
 
 # Define the loss function
-loss = cntk.ops.cross_entropy_with_softmax(output, label)
+loss = cntk.ops.cross_entropy_with_softmax(output, labels)
 
 # Define the function that calculates classification error
-label_error = cntk.ops.classification_error(output, label)
+label_error = cntk.ops.classification_error(output, labels)
 
 # Instantiate the trainer object to drive the model training
 learner = cntk.adam_sgd(output.parameters, learning_rate, momentum)
@@ -241,23 +241,23 @@ for epoch in range(train_max_epochs):
     # loop over minibatches in the epoch
     while sample_count < train_epoch_size:
 
-        minibatch = train_mb_source.next_minibatch(min(train_minibatch_size, train_epoch_size - sample_count))
+        minibatch = train_minibatch_source.next_minibatch(min(train_minibatch_size, train_epoch_size - sample_count))
 
         # Specify the mapping of input variables in the model to actual minibatch data to be trained with
-        data = {input: minibatch[features_train],
-                label: minibatch[labels_train]}
+        data = {input_vars: minibatch[training_features],
+                labels: minibatch[training_labels]}
         trainer.train_minibatch(data)
 
-        sample_count += data[label].num_samples
+        sample_count += data[labels].num_samples
         num_minibatch += 1
 
         # Print the training progress data
         if num_minibatch % training_progress_output_freq == 0:
             training_loss = cntk.get_train_loss(trainer)
             eval_error = cntk.get_train_eval_criterion(trainer)
-            print("# Samples: %d - Loss: %f   Error: %f" % (sample_count, training_loss, eval_error))
+            print("# of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (sample_count, training_loss, eval_error))
 
-print("Training Completed.")
+print("Training Completed.", end="\n\n")
 
 
 '''
@@ -272,15 +272,15 @@ sample_count = 0
 test_result = 0.0
 while sample_count < test_epoch_size:
 
-    minibatch = test_mb_source.next_minibatch(min(test_minibatch_size, test_epoch_size - sample_count))
+    minibatch = test_minibatch_source.next_minibatch(min(test_minibatch_size, test_epoch_size - sample_count))
 
     # Specify the mapping of input variables in the model to actual minibatch data to be tested with
-    data = {input: minibatch[features_test],
-            label: minibatch[labels_test]}
+    data = {input_vars: minibatch[test_features],
+            labels: minibatch[test_labels]}
     eval_error = trainer.test_minibatch(data)
-    test_result = test_result + eval_error
+    test_result += eval_error
 
-    sample_count += data[label].num_samples
+    sample_count += data[labels].num_samples
 
 # Printing the average of evaluation errors of all test minibatches
-print("\nAverage errors of all test minibaches: {0:.6f}%".format(test_result*100 / test_epoch_size))
+print("Average errors of all test minibatches: %.6f%%" % (test_result*100 / test_epoch_size))
