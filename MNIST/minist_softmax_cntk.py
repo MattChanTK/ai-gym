@@ -279,4 +279,4 @@ while sample_count < num_test_samples:
     sample_count += data[labels].num_samples
 
 # Printing the average of evaluation errors of all test minibatches
-print("Average errors of all test minibatches: %.6f%%" % np.mean(test_results, axis=0, dtype=float))
+print("Average errors of all test minibatches: %.6f%%" % np.mean(test_results*100, axis=0, dtype=float))
