@@ -229,33 +229,29 @@ trainer = cntk.Trainer(output, loss, label_error, [learner])
 Training the Convolutional Neural Network
 -----------------------------------------
 '''
-train_epoch_size = num_train_samples
-train_max_epochs = 1
 training_progress_output_freq = 10
 
-# loop over epochs
-for epoch in range(train_max_epochs):
-    sample_count = 0
-    num_minibatch = 0
+sample_count = 0
+num_minibatch = 0
 
-    # loop over minibatches in the epoch
-    while sample_count < train_epoch_size:
+# loop over minibatches in the epoch
+while sample_count < num_train_samples:
 
-        minibatch = train_minibatch_source.next_minibatch(min(train_minibatch_size, train_epoch_size - sample_count))
+    minibatch = train_minibatch_source.next_minibatch(min(train_minibatch_size, num_train_samples - sample_count))
 
-        # Specify the mapping of input variables in the model to actual minibatch data to be trained with
-        data = {input_vars: minibatch[training_features],
-                labels: minibatch[training_labels]}
-        trainer.train_minibatch(data)
+    # Specify the mapping of input variables in the model to actual minibatch data to be trained with
+    data = {input_vars: minibatch[training_features],
+            labels: minibatch[training_labels]}
+    trainer.train_minibatch(data)
 
-        sample_count += data[labels].num_samples
-        num_minibatch += 1
+    sample_count += data[labels].num_samples
+    num_minibatch += 1
 
-        # Print the training progress data
-        if num_minibatch % training_progress_output_freq == 0:
-            training_loss = cntk.get_train_loss(trainer)
-            eval_error = cntk.get_train_eval_criterion(trainer)
-            print("# of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (sample_count, training_loss, eval_error))
+    # Print the training progress data
+    if num_minibatch % training_progress_output_freq == 0:
+        training_loss = cntk.get_train_loss(trainer)
+        eval_error = cntk.get_train_eval_criterion(trainer)
+        print("# of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (sample_count, training_loss, eval_error))
 
 print("Training Completed.", end="\n\n")
 
@@ -265,14 +261,14 @@ print("Training Completed.", end="\n\n")
 Classification Test
 --------------------
 '''
-test_epoch_size = num_test_samples
 test_minibatch_size = 1000
 
 sample_count = 0
 test_results = []
-while sample_count < test_epoch_size:
 
-    minibatch = test_minibatch_source.next_minibatch(min(test_minibatch_size, test_epoch_size - sample_count))
+while sample_count < num_test_samples:
+
+    minibatch = test_minibatch_source.next_minibatch(min(test_minibatch_size, num_test_samples - sample_count))
 
     # Specify the mapping of input variables in the model to actual minibatch data to be tested with
     data = {input_vars: minibatch[test_features],
