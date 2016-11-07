@@ -266,10 +266,10 @@ Classification Test
 --------------------
 '''
 test_epoch_size = num_test_samples
-test_minibatch_size = 512
+test_minibatch_size = 1000
 
 sample_count = 0
-test_result = 0.0
+test_results = []
 while sample_count < test_epoch_size:
 
     minibatch = test_minibatch_source.next_minibatch(min(test_minibatch_size, test_epoch_size - sample_count))
@@ -278,9 +278,9 @@ while sample_count < test_epoch_size:
     data = {input_vars: minibatch[test_features],
             labels: minibatch[test_labels]}
     eval_error = trainer.test_minibatch(data)
-    test_result += eval_error
+    test_results.append(eval_error)
 
     sample_count += data[labels].num_samples
 
 # Printing the average of evaluation errors of all test minibatches
-print("Average errors of all test minibatches: %.6f%%" % (test_result*100 / test_epoch_size))
+print("Average errors of all test minibatches: %.6f%%" % np.mean(test_results, axis=0, dtype=float))
