@@ -18,7 +18,7 @@ Functions to load or download MNIST images and unpack
 into training and testing sets.
 -----------------------------------------------------
 '''
-# loading data from local path if possible. Otherwise download from online sources
+# loading data from local path if possible. Otherwise download from online sources.
 def load_or_download_mnist_files(filename, num_samples, local_data_dir):
 
     if (local_data_dir):
@@ -61,7 +61,6 @@ def get_mnist_data(filename, num_samples, local_data_dir):
 
         return res.reshape((num_samples, crow * ccol))
 
-# loading labels from local path if possible. Otherwise download from online sources
 def get_mnist_labels(filename, num_samples, local_data_dir):
 
     gzfname = load_or_download_mnist_files(filename, num_samples, local_data_dir)
@@ -80,7 +79,6 @@ def get_mnist_labels(filename, num_samples, local_data_dir):
 
         return res.reshape((num_samples, 1))
 
-# loading mnist data and labels
 def load_mnist_data(data_filename, labels_filename, number_samples, local_data_dir=None):
     data = get_mnist_data(data_filename, number_samples, local_data_dir)
     labels = get_mnist_labels(labels_filename, number_samples, local_data_dir)
@@ -182,12 +180,12 @@ Constructing the Convolutional Neural Network
 def create_convolutional_neural_network(input_vars, out_dims, dropout_prob=0.0):
 
     convolutional_layer_1 = Convolution((5, 5), 32, strides=1, activation=cntk.ops.relu, pad=True)(input_vars)
-    pooling_layer_1 = MaxPooling((2, 2), strides=(2, 2))(convolutional_layer_1)
+    pooling_layer_1 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_1)
 
     convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True)(pooling_layer_1)
-    pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2))(convolutional_layer_2)
+    pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_2)
 
-    fully_connected_layer = Dense(1024)(pooling_layer_2)
+    fully_connected_layer = Dense(1024, activation=cntk.ops.relu)(pooling_layer_2)
     dropout_layer = Dropout(dropout_prob)(fully_connected_layer)
     output_layer = Dense(out_dims, activation=None)(dropout_layer)
 
@@ -208,10 +206,10 @@ Setting up the trainer
 # Define the label as the other input parameter of the trainer
 labels = cntk.ops.input_variable(output_dim, np.float32)
 
-#Initialize the parameters for the trainer
-train_minibatch_size = 100
+# Initialize the parameters for the trainer
+train_minibatch_size = 50
 learning_rate = 1e-4
-momentum = 0.9 ** (1.0 / train_minibatch_size)
+momentum = 0.9
 
 # Define the loss function
 loss = cntk.ops.cross_entropy_with_softmax(output, labels)
@@ -229,8 +227,8 @@ trainer = cntk.Trainer(output, loss, label_error, [learner])
 Training the Convolutional Neural Network
 -----------------------------------------
 '''
-num_training_epoch = 5
-training_progress_output_freq = 10
+num_training_epoch = 1
+training_progress_output_freq = 100
 
 for epoch in range(num_training_epoch):
 
