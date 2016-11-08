@@ -10,6 +10,7 @@ except ImportError:
 
 import cntk
 from cntk.layers import Convolution, MaxPooling, Dropout, Dense
+from cntk.initializer import gaussian
 
 
 '''
@@ -179,15 +180,15 @@ Constructing the Convolutional Neural Network
 '''
 def create_convolutional_neural_network(input_vars, out_dims, dropout_prob=0.0):
 
-    convolutional_layer_1 = Convolution((5, 5), 32, strides=1, activation=cntk.ops.relu, pad=True)(input_vars)
+    convolutional_layer_1 = Convolution((5, 5), 32, strides=1, activation=cntk.ops.relu, pad=True, init=gaussian(), init_bias=0.1)(input_vars)
     pooling_layer_1 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_1)
 
-    convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True)(pooling_layer_1)
+    convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True, init=gaussian(), init_bias=0.1)(pooling_layer_1)
     pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_2)
 
-    fully_connected_layer = Dense(1024, activation=cntk.ops.relu)(pooling_layer_2)
+    fully_connected_layer = Dense(1024, activation=cntk.ops.relu, init=gaussian(), init_bias=0.1)(pooling_layer_2)
     dropout_layer = Dropout(dropout_prob)(fully_connected_layer)
-    output_layer = Dense(out_dims, activation=None)(dropout_layer)
+    output_layer = Dense(out_dims, activation=None, init=gaussian(), init_bias=0.1)(dropout_layer)
 
     return output_layer
 
