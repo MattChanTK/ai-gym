@@ -258,7 +258,7 @@ for epoch in range(num_training_epoch):
             t = perf_counter() - training_start_time
             print("(%d s) Epoch %d  |  # of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (t, epoch, sample_count, training_loss, eval_error))
 
-t_minute = (perf_counter() - training_start_time) * 60
+t_minute = (perf_counter() - training_start_time) / 60
 print("Training Completed in %f minutes." % t_minute , end="\n\n")
 
 
