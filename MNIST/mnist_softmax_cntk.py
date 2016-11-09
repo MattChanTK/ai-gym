@@ -2,6 +2,7 @@ import gzip
 import os
 import struct
 import numpy as np
+from time import perf_counter
 
 try:
     from urllib.request import urlretrieve
@@ -145,7 +146,7 @@ if not os.path.exists(testing_data_path):
     url_test_labels = "t10k-labels-idx1-ubyte.gz"
 
     print("Loading testing data")
-    saved_data_dir = os.path.join(os.getcwd(), "MNIST_data2")
+    saved_data_dir = os.path.join(os.getcwd(), "MNIST_data")
     test = load_mnist_data(url_test_image, url_test_labels, num_test_samples, saved_data_dir)
 
     print ("Writing testing data text file...")
@@ -228,8 +229,9 @@ trainer = cntk.Trainer(output, loss, label_error, [learner])
 Training the Convolutional Neural Network
 -----------------------------------------
 '''
-num_training_epoch = 1
+num_training_epoch = 5
 training_progress_output_freq = 100
+training_start_time = perf_counter()
 
 for epoch in range(num_training_epoch):
 
@@ -253,9 +255,11 @@ for epoch in range(num_training_epoch):
         if num_minibatch % training_progress_output_freq == 0:
             training_loss = cntk.get_train_loss(trainer)
             eval_error = cntk.get_train_eval_criterion(trainer)
-            print("Epoch %d  |  # of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (epoch, sample_count, training_loss, eval_error))
+            t = perf_counter() - training_start_time
+            print("(%d s) Epoch %d  |  # of Samples: %6d  |  Loss: %.6f  |  Error: %.6f" % (t, epoch, sample_count, training_loss, eval_error))
 
-print("Training Completed.", end="\n\n")
+t_minute = (perf_counter() - training_start_time) * 60
+print("Training Completed in %f minutes." % t_minute , end="\n\n")
 
 
 '''
