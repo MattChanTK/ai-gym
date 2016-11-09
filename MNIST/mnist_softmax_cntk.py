@@ -187,7 +187,10 @@ def create_convolutional_neural_network(input_vars, out_dims, dropout_prob=0.0):
     convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True, init=gaussian(), init_bias=0.1)(pooling_layer_1)
     pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_2)
 
-    fully_connected_layer = Dense(1024, activation=cntk.ops.relu, init=gaussian(), init_bias=0.1)(pooling_layer_2)
+    convolutional_layer_3 = Convolution((5, 5), 128, strides=1, activation=cntk.ops.relu, pad=True, init=gaussian(), init_bias=0.1)(pooling_layer_2)
+    pooling_layer_3 = MaxPooling((2, 2), strides=(2, 2), pad=True)(convolutional_layer_3)
+
+    fully_connected_layer = Dense(1024, activation=cntk.ops.relu, init=gaussian(), init_bias=0.1)(pooling_layer_3)
     dropout_layer = Dropout(dropout_prob)(fully_connected_layer)
     output_layer = Dense(out_dims, activation=None, init=gaussian(), init_bias=0.1)(dropout_layer)
 
