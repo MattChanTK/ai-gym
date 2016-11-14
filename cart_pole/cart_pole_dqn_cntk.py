@@ -33,7 +33,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_multi_layers_neural_network(observation, NUM_ACTIONS, 1)
+        self.model = self.create_multi_layers_neural_network(observation, NUM_ACTIONS, 3)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
