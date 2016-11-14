@@ -8,9 +8,8 @@ from collections import deque
 
 import gym
 import cntk
-from cntk.layers import Dense, Dropout
+from cntk.layers import Dense
 from cntk.models import Sequential, LayerStack
-from cntk.initializer import gaussian
 
 
 env = gym.make('CartPole-v0')
@@ -18,10 +17,7 @@ env = gym.make('CartPole-v0')
 STATE_DIM  = env.observation_space.shape[0]
 NUM_ACTIONS = env.action_space.n
 
-'''
 
-The neural network and model
-'''
 class Brain:
 
     BATCH_SIZE = 50
@@ -33,7 +29,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_multi_layers_neural_network(observation, NUM_ACTIONS, 3)
+        self.model = self.create_double_layer_neural_network(observation, NUM_ACTIONS)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
@@ -52,7 +48,7 @@ class Brain:
         return self.model.eval(s)
 
     @staticmethod
-    def create_multi_layers_neural_network(input_vars, out_dims, num_hidden_layers):
+    def create_repeated_layers_neural_network(input_vars, out_dims, num_hidden_layers):
 
         input_dims = input_vars.shape[0]
         num_hidden_neurons = input_dims**3
@@ -66,8 +62,36 @@ class Brain:
 
     @staticmethod
     def create_single_layer_neural_network(input_vars, out_dims):
-        return Brain.create_multi_layers_neural_network(input_vars, out_dims, 1)
+        return Brain.create_repeated_layers_neural_network(input_vars, out_dims, 1)
 
+    @staticmethod
+    def create_double_layer_neural_network(input_vars, out_dims):
+        input_dims = input_vars.shape[0]
+
+        hidden_layer_1 = Dense(input_dims**3, activation=cntk.ops.relu)
+        hidden_layer_2 = Dense(input_dims**2, activation=cntk.ops.relu)
+        output_layer = Dense(out_dims, activation=None)
+
+        model = Sequential([hidden_layer_1,
+                            hidden_layer_2,
+                            output_layer])(input_vars)
+        return model
+
+    @staticmethod
+    def create_triple_layer_neural_network(input_vars, out_dims):
+        input_dims = input_vars.shape[0]
+
+        hidden_layer_1 = Dense(input_dims**3, activation=cntk.ops.relu)
+        hidden_layer_2 = Dense(input_dims**2, activation=cntk.ops.relu)
+        hidden_layer_3 = Dense(input_dims**1, activation=cntk.ops.relu)
+
+        output_layer = Dense(out_dims, activation=None)
+
+        model = Sequential([hidden_layer_1,
+                            hidden_layer_2,
+                            hidden_layer_3,
+                            output_layer])(input_vars)
+        return model
 
 class Memory:
 
@@ -158,7 +182,7 @@ def run_simulation(agent, solved_reward_level):
         state = resultant_state
         total_rewards += reward
 
-        if total_rewards > DONE_REWARD_LEVEL or done:
+        if total_rewards > solved_reward_level or done:
             return total_rewards
 
 
@@ -186,7 +210,7 @@ if __name__ == "__main__":
     # Ensure we always get the same amount of randomness
     np.random.seed(0)
 
-    GYM_ENABLE_UPLOAD = False
+    GYM_ENABLE_UPLOAD = True
     GYM_VIDEO_PATH = os.path.join(os.getcwd(), "videos", "cart_pole_dpn_cntk")
     GYM_API_KEY = "sk_93AMQvdmReWCi8pdL4m6Q"
 
@@ -199,7 +223,7 @@ if __name__ == "__main__":
         os.makedirs(TRAINED_MODEL_DIR)
     TRAINED_MODEL_NAME = "cart_pole_dpn.mod"
 
-    EPISODES_PER_PRINT_PROGRESS = 100
+    EPISODES_PER_PRINT_PROGRESS = 50
 
     if len(sys.argv) < 2 or sys.argv[1] != "test_only":
 
