@@ -33,8 +33,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_multi_layers_neural_network(observation, NUM_ACTIONS, 3)
-        # self.model = self.create_single_layer_neural_network(observation, NUM_ACTIONS)
+        self.model = self.create_multi_layers_neural_network(observation, NUM_ACTIONS, 1)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
@@ -42,10 +41,10 @@ class Brain:
         self.loss =  cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
         mean_error = cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
 
-        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.9, gradient_clipping_threshold_per_sample=10)
+        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.9)
         self.trainer = cntk.Trainer(self.model, self.loss, mean_error, learner)
 
-    def train(self, x, y, epoch=1, verbose=0):
+    def train(self, x, y):
         data = dict(zip(self.loss.arguments, [y, x]))
         self.trainer.train_minibatch(data, outputs=[self.loss.output])
 
@@ -58,19 +57,19 @@ class Brain:
         input_dims = input_vars.shape[0]
         num_hidden_neurons = input_dims**3
 
-        hidden_layer = lambda: Dense(num_hidden_neurons, activation=cntk.ops.relu, init=gaussian(), init_bias=0.1)
-        output_layer = Dense(out_dims, activation=None, init=gaussian(), init_bias=0.1)
+        hidden_layer = lambda: Dense(num_hidden_neurons, activation=cntk.ops.relu)
+        output_layer = Dense(out_dims, activation=None)
 
         model = Sequential([LayerStack(num_hidden_layers, hidden_layer),
                             output_layer])(input_vars)
         return model
 
     @staticmethod
-    def create_single_layer_neural_network(input_vars, out_dims, dropout_prob=0.0):
+    def create_single_layer_neural_network(input_vars, out_dims):
         return Brain.create_multi_layers_neural_network(input_vars, out_dims, 1)
 
 
-class Memory:  # stored as ( s, a, r, s' )
+class Memory:
 
     def __init__(self, capacity):
         self.examplers = deque(maxlen=capacity)
@@ -159,7 +158,7 @@ def run_simulation(agent, solved_reward_level):
         state = resultant_state
         total_rewards += reward
 
-        if total_rewards / agent.brain.BATCH_SIZE > DONE_REWARD_LEVEL or done:
+        if total_rewards > DONE_REWARD_LEVEL or done:
             return total_rewards
 
 
@@ -172,8 +171,8 @@ def test(model_path, num_episodes=10):
         while not done:
             try:
                 env.render()
-            except Exception as e:
-                print(e)
+            except Exception:
+                pass
             action = np.argmax(root.eval(observation.astype(np.float32)))
             observation, reward, done, info = env.step(action)
         if done:
@@ -181,6 +180,9 @@ def test(model_path, num_episodes=10):
 
 
 if __name__ == "__main__":
+
+    # Ensure we always get the same amount of randomness
+    np.random.seed(0)
 
     GYM_ENABLE_UPLOAD = False
     GYM_VIDEO_PATH = os.path.join(os.getcwd(), "videos", "cart_pole_dpn_cntk")
@@ -194,6 +196,8 @@ if __name__ == "__main__":
     if not os.path.exists(TRAINED_MODEL_DIR):
         os.makedirs(TRAINED_MODEL_DIR)
     TRAINED_MODEL_NAME = "cart_pole_dpn.mod"
+
+    EPISODES_PER_PRINT_PROGRESS = 100
 
     if len(sys.argv) < 2 or sys.argv[1] != "test_only":
 
@@ -216,24 +220,23 @@ if __name__ == "__main__":
             reward_sum += reward
 
             episode_number += 1
-            if episode_number % agent.brain.BATCH_SIZE == 0:
+            if episode_number % EPISODES_PER_PRINT_PROGRESS == 0:
                 t = perf_counter() - training_start_time
                 print("(%d s) Episode: %d, Average reward = %f." % (t, episode_number, reward_sum / agent.brain.BATCH_SIZE))
-
-                # It is considered solved when the sum of reward is over 200
-                if reward > DONE_REWARD_LEVEL:
-                    num_streaks += 1
-                    solved_episode = episode_number
-                else:
-                    num_streaks = 0
-                    solved_episode = -1
-
-                # It's considered done when it's solved over 120 times consecutively
-                if num_streaks > STREAK_TO_END:
-                    print("Task solved in %d episodes and repeated %d times." % (episode_number, num_streaks))
-                    break
-
                 reward_sum = 0
+
+            # It is considered solved when the sum of reward is over 200
+            if reward > DONE_REWARD_LEVEL:
+                num_streaks += 1
+                solved_episode = episode_number
+            else:
+                num_streaks = 0
+                solved_episode = -1
+
+            # It's considered done when it's solved over 120 times consecutively
+            if num_streaks > STREAK_TO_END:
+                print("Task solved in %d episodes and repeated %d times." % (episode_number, num_streaks))
+                break
 
         agent.brain.model.save_model(os.path.join(TRAINED_MODEL_DIR, TRAINED_MODEL_NAME), False)
 
