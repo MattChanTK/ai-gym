@@ -29,7 +29,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_double_layer_neural_network(observation, NUM_ACTIONS)
+        self.model = self.create_repeated_layers_neural_network(observation, NUM_ACTIONS, 2)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
@@ -214,9 +214,9 @@ if __name__ == "__main__":
     GYM_VIDEO_PATH = os.path.join(os.getcwd(), "videos", "cart_pole_dpn_cntk")
     GYM_API_KEY = "sk_93AMQvdmReWCi8pdL4m6Q"
 
-    MAX_NUM_EPISODES = 5000
+    MAX_NUM_EPISODES = 3000
     STREAK_TO_END = 120
-    DONE_REWARD_LEVEL = 200
+    DONE_REWARD_LEVEL = 196
 
     TRAINED_MODEL_DIR = os.path.join(os.getcwd(), "trained_models")
     if not os.path.exists(TRAINED_MODEL_DIR):
