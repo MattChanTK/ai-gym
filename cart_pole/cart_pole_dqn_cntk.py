@@ -172,7 +172,9 @@ def test(model_path, num_episodes=10):
             try:
                 env.render()
             except Exception:
+                # this might fail on a VM without OpenGL
                 pass
+
             action = np.argmax(root.eval(observation.astype(np.float32)))
             observation, reward, done, info = env.step(action)
         if done:
@@ -222,7 +224,7 @@ if __name__ == "__main__":
             episode_number += 1
             if episode_number % EPISODES_PER_PRINT_PROGRESS == 0:
                 t = perf_counter() - training_start_time
-                print("(%d s) Episode: %d, Average reward = %f." % (t, episode_number, reward_sum / agent.brain.BATCH_SIZE))
+                print("(%d s) Episode: %d, Average reward = %f." % (t, episode_number, reward_sum / EPISODES_PER_PRINT_PROGRESS))
                 reward_sum = 0
 
             # It is considered solved when the sum of reward is over 200
