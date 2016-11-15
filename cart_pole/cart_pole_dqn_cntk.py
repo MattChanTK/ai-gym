@@ -29,7 +29,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_repeated_layers_neural_network(observation, NUM_ACTIONS, 2)
+        self.model = self.create_multi_layer_neural_network(observation, NUM_ACTIONS, 3)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
@@ -48,7 +48,7 @@ class Brain:
         return self.model.eval(s)
 
     @staticmethod
-    def create_repeated_layers_neural_network(input_vars, out_dims, num_hidden_layers):
+    def create_multi_layer_neural_network(input_vars, out_dims, num_hidden_layers):
 
         input_dims = input_vars.shape[0]
         num_hidden_neurons = input_dims**3
@@ -62,34 +62,17 @@ class Brain:
 
     @staticmethod
     def create_single_layer_neural_network(input_vars, out_dims):
-        return Brain.create_repeated_layers_neural_network(input_vars, out_dims, 1)
+        return Brain.create_multi_layer_neural_network(input_vars, out_dims, 1)
 
     @staticmethod
-    def create_double_layer_neural_network(input_vars, out_dims):
-        input_dims = input_vars.shape[0]
+    def create_pooling_neural_network(input_vars, out_dims):
 
-        hidden_layer_1 = Dense(input_dims**3, activation=cntk.ops.relu)
-        hidden_layer_2 = Dense(input_dims**2, activation=cntk.ops.relu)
+        hidden_layer_1 = Dense(2, activation=cntk.ops.relu)
+        hidden_layer_2 = Dense(16, activation=cntk.ops.relu)
         output_layer = Dense(out_dims, activation=None)
 
         model = Sequential([hidden_layer_1,
                             hidden_layer_2,
-                            output_layer])(input_vars)
-        return model
-
-    @staticmethod
-    def create_triple_layer_neural_network(input_vars, out_dims):
-        input_dims = input_vars.shape[0]
-
-        hidden_layer_1 = Dense(input_dims**3, activation=cntk.ops.relu)
-        hidden_layer_2 = Dense(input_dims**2, activation=cntk.ops.relu)
-        hidden_layer_3 = Dense(input_dims**1, activation=cntk.ops.relu)
-
-        output_layer = Dense(out_dims, activation=None)
-
-        model = Sequential([hidden_layer_1,
-                            hidden_layer_2,
-                            hidden_layer_3,
                             output_layer])(input_vars)
         return model
 
