@@ -41,7 +41,7 @@ STATE_DIMS = (1, IMAGE_H, IMAGE_W)
 
 class Brain:
 
-    BATCH_SIZE = 3
+    BATCH_SIZE = 5
 
     def __init__(self):
 
@@ -101,7 +101,7 @@ class Brain:
 
         model = Sequential([convolutional_layer_1, pooling_layer_1,
                             convolutional_layer_2, pooling_layer_2,
-                            convolutional_layer_3, pooling_layer_3,
+                            #convolutional_layer_3, pooling_layer_3,
                             fully_connected_layer,
                             output_layer])(input_vars)
         return model
@@ -200,12 +200,16 @@ class Agent:
 
 
 def run_simulation(agent, solved_reward_level):
+
     state = env.reset()
     state = preprocess_image(state)
     total_rewards = 0
+    time_step = 0
 
     while True:
         #env.render()
+
+        time_step += 1
 
         action = agent.act(state.astype(np.float32))
 
@@ -222,7 +226,7 @@ def run_simulation(agent, solved_reward_level):
         total_rewards += reward
 
         if total_rewards > solved_reward_level or done:
-            return total_rewards
+            return total_rewards, time_step
 
 
 def test(model_path, num_episodes=10):
@@ -254,9 +258,9 @@ if __name__ == "__main__":
     GYM_VIDEO_PATH = os.path.join(os.getcwd(), "videos", "atari_breakout_dpn_cntk")
     GYM_API_KEY = "sk_93AMQvdmReWCi8pdL4m6Q"
 
-    MAX_NUM_EPISODES = 5000
+    MAX_NUM_EPISODES = 1000
     STREAK_TO_END = 120
-    DONE_REWARD_LEVEL = 100
+    DONE_REWARD_LEVEL = 50
 
     TRAINED_MODEL_DIR = os.path.join(os.getcwd(), "trained_models")
     if not os.path.exists(TRAINED_MODEL_DIR):
@@ -264,6 +268,7 @@ if __name__ == "__main__":
     TRAINED_MODEL_NAME = "atari_breakout_dpn.mod"
 
     EPISODES_PER_PRINT_PROGRESS = 1
+    EPISODES_PER_SAVE = 5
 
     if len(sys.argv) < 2 or sys.argv[1] != "test_only":
 
@@ -275,6 +280,7 @@ if __name__ == "__main__":
         episode_number = 0
         num_streaks = 0
         reward_sum = 0
+        time_step_sum = 0
         solved_episode = -1
 
         training_start_time = perf_counter()
@@ -282,14 +288,17 @@ if __name__ == "__main__":
         while episode_number < MAX_NUM_EPISODES:
 
             # Run the simulation and train the agent
-            reward = run_simulation(agent, DONE_REWARD_LEVEL*2)
+            reward, time_step = run_simulation(agent, DONE_REWARD_LEVEL*2)
             reward_sum += reward
+            time_step_sum += time_step
 
             episode_number += 1
             if episode_number % EPISODES_PER_PRINT_PROGRESS == 0:
                 t = perf_counter() - training_start_time
-                print("(%d s) Episode: %d, Average reward = %f." % (t, episode_number, reward_sum / EPISODES_PER_PRINT_PROGRESS))
+                print("(%d s) Episode: %d, Average reward = %.3f, Average number of time steps = %.3f."
+                      % (t, episode_number, reward_sum / EPISODES_PER_PRINT_PROGRESS, time_step_sum/EPISODES_PER_PRINT_PROGRESS))
                 reward_sum = 0
+                time_step_sum = 0
 
             # It is considered solved when the sum of reward is over 200
             if reward > DONE_REWARD_LEVEL:
@@ -303,6 +312,9 @@ if __name__ == "__main__":
             if num_streaks > STREAK_TO_END:
                 print("Task solved in %d episodes and repeated %d times." % (episode_number, num_streaks))
                 break
+
+            if episode_number % EPISODES_PER_SAVE == 0:
+                agent.brain.model.save_model(os.path.join(TRAINED_MODEL_DIR, TRAINED_MODEL_NAME), False)
 
         agent.brain.model.save_model(os.path.join(TRAINED_MODEL_DIR, TRAINED_MODEL_NAME), False)
 
