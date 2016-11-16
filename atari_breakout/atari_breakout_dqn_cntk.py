@@ -8,8 +8,9 @@ from collections import deque
 
 import gym
 import cntk
-from cntk.layers import Dense
+from cntk.layers import  Convolution, MaxPooling,  Dense
 from cntk.models import Sequential, LayerStack
+from cntk.initializer import glorot_normal
 
 
 env = gym.make("Breakout-v0")
@@ -32,15 +33,15 @@ def preprocess_image(screen_image):
         for j in range(len(screen_image[i])):
             grey_image[i][j] = np.mean(screen_image[i][j])
 
-    return grey_image.astype(np.float)
+    return np.array([grey_image.astype(np.float)])
 
 
-IMAGE_H, IMAGE_W = preprocess_image(np.zeros((SCREEN_H_ORIG, SCREEN_W_ORIG))).shape
-STATE_DIMS = (IMAGE_H, IMAGE_W)
+CHANNELS, IMAGE_H, IMAGE_W = preprocess_image(np.zeros((SCREEN_H_ORIG, SCREEN_W_ORIG))).shape
+STATE_DIMS = (1, IMAGE_H, IMAGE_W)
 
 class Brain:
 
-    BATCH_SIZE = 50
+    BATCH_SIZE = 3
 
     def __init__(self):
 
@@ -49,7 +50,7 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_multi_layer_neural_network(observation, NUM_ACTIONS, 3)
+        self.model = self.create_convolutional_neural_network(observation, NUM_ACTIONS)
 
         #### Define the trainer ####
         self.learning_rate = 0.00025
@@ -57,7 +58,7 @@ class Brain:
         self.loss =  cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
         mean_error = cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
 
-        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.9)
+        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.0)
         self.trainer = cntk.Trainer(self.model, self.loss, mean_error, learner)
 
     def train(self, x, y):
@@ -70,13 +71,38 @@ class Brain:
     @staticmethod
     def create_multi_layer_neural_network(input_vars, out_dims, num_hidden_layers):
 
-        input_dims = input_vars.shape
         num_hidden_neurons = 128
 
         hidden_layer = lambda: Dense(num_hidden_neurons, activation=cntk.ops.relu)
         output_layer = Dense(out_dims, activation=None)
 
         model = Sequential([LayerStack(num_hidden_layers, hidden_layer),
+                            output_layer])(input_vars)
+        return model
+
+    @staticmethod
+    def create_convolutional_neural_network(input_vars, out_dims):
+
+        convolutional_layer_1 = Convolution((5, 5), 32, strides=1, activation=cntk.ops.relu, pad=True,
+                                            init=glorot_normal(), init_bias=0.1)
+        pooling_layer_1 = MaxPooling((2, 2), strides=(2, 2), pad=True)
+
+        convolutional_layer_2 = Convolution((5, 5), 64, strides=1, activation=cntk.ops.relu, pad=True,
+                                            init=glorot_normal(), init_bias=0.1)
+        pooling_layer_2 = MaxPooling((2, 2), strides=(2, 2), pad=True)
+
+        convolutional_layer_3 = Convolution((5, 5), 128, strides=1, activation=cntk.ops.relu, pad=True,
+                                            init=glorot_normal(), init_bias=0.1)
+        pooling_layer_3 = MaxPooling((2, 2), strides=(2, 2), pad=True)
+
+        fully_connected_layer = Dense(1024, activation=cntk.ops.relu, init=glorot_normal(), init_bias=0.1)
+
+        output_layer = Dense(out_dims, activation=None, init=glorot_normal(), init_bias=0.1)
+
+        model = Sequential([convolutional_layer_1, pooling_layer_1,
+                            convolutional_layer_2, pooling_layer_2,
+                            convolutional_layer_3, pooling_layer_3,
+                            fully_connected_layer,
                             output_layer])(input_vars)
         return model
 
