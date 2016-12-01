@@ -29,15 +29,16 @@ class Brain:
         q_target = cntk.ops.input_variable(NUM_ACTIONS, np.float32, name="q")
 
         # Define the structure of the neural network
-        self.model = self.create_multi_layer_neural_network(observation, NUM_ACTIONS, 3)
+        self.model = self.create_multi_layer_neural_network(observation, NUM_ACTIONS, 2)
 
         #### Define the trainer ####
-        self.learning_rate = 0.00025
+        self.learning_rate = cntk.learner.training_parameter_schedule(0.01, cntk.UnitType.sample)
+        self.momentum = cntk.learner.momentum_as_time_constant_schedule(0.99)
 
         self.loss =  cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
         mean_error = cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
 
-        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.9)
+        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate, momentum=self.momentum)
         self.trainer = cntk.Trainer(self.model, self.loss, mean_error, learner)
 
     def train(self, x, y):
@@ -45,7 +46,7 @@ class Brain:
         self.trainer.train_minibatch(data, outputs=[self.loss.output])
 
     def predict(self, s):
-        return self.model.eval(s)
+        return self.model.eval([s])
 
     @staticmethod
     def create_multi_layer_neural_network(input_vars, out_dims, num_hidden_layers):
@@ -173,8 +174,9 @@ def test(model_path, num_episodes=10):
 
     root = cntk.load_model(model_path)
     observation = env.reset()  # reset environment for new episode
-    done = False
     for episode in range(num_episodes):
+        done = False
+        print(episode)
         while not done:
             try:
                 env.render()
@@ -182,7 +184,7 @@ def test(model_path, num_episodes=10):
                 # this might fail on a VM without OpenGL
                 pass
 
-            action = np.argmax(root.eval(observation.astype(np.float32)))
+            action = np.argmax(root.eval([observation.astype(np.float32)]))
             observation, reward, done, info = env.step(action)
         if done:
             observation = env.reset()  # reset environment for new episode
@@ -193,7 +195,7 @@ if __name__ == "__main__":
     # Ensure we always get the same amount of randomness
     np.random.seed(0)
 
-    GYM_ENABLE_UPLOAD = True
+    GYM_ENABLE_UPLOAD = False
     GYM_VIDEO_PATH = os.path.join(os.getcwd(), "videos", "cart_pole_dpn_cntk")
     GYM_API_KEY = "sk_93AMQvdmReWCi8pdL4m6Q"
 
@@ -242,7 +244,7 @@ if __name__ == "__main__":
                 num_streaks = 0
                 solved_episode = -1
 
-            # It's considered done when it's solved over 120 times consecutively
+            # It's considered done when it's solveFalsed over 120 times consecutively
             if num_streaks > STREAK_TO_END:
                 print("Task solved in %d episodes and repeated %d times." % (episode_number, num_streaks))
                 break
@@ -254,4 +256,4 @@ if __name__ == "__main__":
             gym.upload(GYM_VIDEO_PATH, api_key=GYM_API_KEY)
 
     # testing the model
-    test(os.path.join(TRAINED_MODEL_DIR, TRAINED_MODEL_NAME), num_episodes=10)
+    test(os.path.join(TRAINED_MODEL_DIR, TRAINED_MODEL_NAME), num_episodes=1000)
