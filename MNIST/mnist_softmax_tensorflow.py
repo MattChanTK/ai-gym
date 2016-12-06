@@ -1,4 +1,5 @@
 import tensorflow as tf
+from time import clock
 
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -69,17 +70,19 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
 init_op = tf.initialize_all_variables()
+training_start_time = clock()
 
 with tf.Session() as sess:
     sess.run(init_op)
 
-    for i in range(20000):
+    for i in range(10000):
         batch = mnist.train.next_batch(100)
         sess.run(train_step, feed_dict={x: batch[0], y_truth: batch[1], keep_prob: 0.5})
 
         if i%100 == 0:
+            t = clock() - training_start_time
             result = sess.run(accuracy, feed_dict={x: batch[0], y_truth: batch[1], keep_prob: 1.0})
-            print("Step %d, training accuracy %g" % (i, result))
+            print("(%.2f s) Step %d, training accuracy %g" % (t, i, result))
 
     test_result = sess.run(accuracy, feed_dict={x: mnist.test.images, y_truth: mnist.test.labels, keep_prob: 1.0})
     print("Test accuracy %g" % (test_result))
