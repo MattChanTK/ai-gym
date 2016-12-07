@@ -53,12 +53,13 @@ class Brain:
         self.model = self.create_convolutional_neural_network(observation, NUM_ACTIONS)
 
         #### Define the trainer ####
-        self.learning_rate = 0.00025
+        self.learning_rate = cntk.learner.training_parameter_schedule(0.0001, cntk.UnitType.sample)
+        self.momentum = cntk.learner.momentum_as_time_constant_schedule(0.99)
 
         self.loss =  cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
         mean_error = cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)
 
-        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate/self.BATCH_SIZE, momentum=0.0)
+        learner = cntk.adam_sgd(self.model.parameters, self.learning_rate, momentum=self.momentum)
         self.trainer = cntk.Trainer(self.model, self.loss, mean_error, learner)
 
     def train(self, x, y):
@@ -66,7 +67,7 @@ class Brain:
         self.trainer.train_minibatch(data, outputs=[self.loss.output])
 
     def predict(self, s):
-        return self.model.eval(s)
+        return self.model.eval([s])
 
     @staticmethod
     def create_multi_layer_neural_network(input_vars, out_dims, num_hidden_layers):

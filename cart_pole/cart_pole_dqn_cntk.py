@@ -32,7 +32,7 @@ class Brain:
         self.model = self.create_multi_layer_neural_network(observation, NUM_ACTIONS, 2)
 
         #### Define the trainer ####
-        self.learning_rate = cntk.learner.training_parameter_schedule(0.01, cntk.UnitType.sample)
+        self.learning_rate = cntk.learner.training_parameter_schedule(0.0001, cntk.UnitType.sample)
         self.momentum = cntk.learner.momentum_as_time_constant_schedule(0.99)
 
         self.loss =  cntk.ops.reduce_mean(cntk.ops.square(self.model - q_target), axis=0)

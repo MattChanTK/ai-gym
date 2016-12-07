@@ -213,8 +213,8 @@ labels = cntk.ops.input_variable(output_dim, np.float32)
 
 # Initialize the parameters for the trainer
 train_minibatch_size = 50
-learning_rate = 1e-4
-momentum = 0.9
+learning_rate = cntk.learner.training_parameter_schedule(1e-4, cntk.UnitType.sample)
+momentum = cntk.learner.momentum_as_time_constant_schedule(0.99)
 
 # Define the loss function
 loss = cntk.ops.cross_entropy_with_softmax(output, labels)
@@ -232,7 +232,7 @@ trainer = cntk.Trainer(output, loss, label_error, [learner])
 Training the Convolutional Neural Network
 -----------------------------------------
 '''
-num_training_epoch = 5
+num_training_epoch = 20
 training_progress_output_freq = 100
 training_start_time = perf_counter()
 
